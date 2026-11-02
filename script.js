@@ -1,4 +1,4 @@
-// App State & Local Storage Initialization (Reset to empty/clean state)
+// App State & Local Storage Initialization
 let state = {
     tasks: JSON.parse(localStorage.getItem('workspace_tasks')) || [],
     savings: parseFloat(localStorage.getItem('workspace_savings')) || 0,
@@ -142,15 +142,18 @@ function renderTasks() {
                     <i class="fa-solid fa-flag text-xs ${priorityColors[task.priority]}"></i>
                 </div>
                 <h4 class="font-bold text-slate-800 text-base ${task.completed ? 'line-through text-slate-400' : ''}">${task.title}</h4>
-                <p class="text-xs text-slate-500 mt-1">${task.desc || 'Tidak ada deskripsi.'}</p>
+                <p class="text-xs text-slate-600 mt-2 whitespace-pre-line bg-slate-50 p-2.5 rounded-xl border border-slate-100">${task.desc || 'Tidak ada isi catatan.'}</p>
             </div>
             <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
                 <span class="text-slate-400"><i class="fa-regular fa-calendar text-[10px] mr-1"></i>${task.date}</span>
                 <div class="flex gap-2">
-                    <button onclick="toggleTask(${task.id})" class="text-emerald-600 hover:text-emerald-700 font-semibold">
+                    <button onclick="editTask(${task.id})" class="text-blue-500 hover:text-blue-700 font-semibold" title="Edit Catatan">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button onclick="toggleTask(${task.id})" class="text-emerald-600 hover:text-emerald-700 font-semibold" title="Selesai / Buka">
                         <i class="fa-solid ${task.completed ? 'fa-rotate-left' : 'fa-check'}"></i>
                     </button>
-                    <button onclick="deleteTask(${task.id})" class="text-rose-500 hover:text-rose-700 font-semibold">
+                    <button onclick="deleteTask(${task.id})" class="text-rose-500 hover:text-rose-700 font-semibold" title="Hapus">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>
@@ -160,23 +163,77 @@ function renderTasks() {
     });
 }
 
-function openTaskModal() { document.getElementById('taskModal').classList.remove('hidden'); }
+function updateTaskFormLabel() {
+    const category = document.getElementById('taskCategory').value;
+    const label = document.getElementById('taskDescLabel');
+    if (category === 'ilmu') {
+        label.innerText = 'Isi Catatan Ilmu';
+    } else {
+        label.innerText = 'Deskripsi / Detail';
+    }
+}
+
+function openTaskModal(taskId = null) {
+    document.getElementById('taskId').value = '';
+    document.getElementById('taskForm').reset();
+    document.getElementById('taskModalTitle').innerText = 'Tambah Catatan Baru';
+    updateTaskFormLabel();
+
+    if (taskId) {
+        const task = state.tasks.find(t => t.id === taskId);
+        if (task) {
+            document.getElementById('taskId').value = task.id;
+            document.getElementById('taskTitle').value = task.title;
+            document.getElementById('taskCategory').value = task.category;
+            document.getElementById('taskDesc').value = task.desc;
+            document.getElementById('taskPriority').value = task.priority;
+            document.getElementById('taskModalTitle').innerText = 'Edit Catatan';
+            updateTaskFormLabel();
+        }
+    }
+
+    document.getElementById('taskModal').classList.remove('hidden');
+}
+
 function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); }
+
+function editTask(id) {
+    openTaskModal(id);
+}
 
 function handleTaskSubmit(e) {
     e.preventDefault();
-    showSpinner("Menyimpan tugas...");
+    showSpinner("Menyimpan catatan...");
     setTimeout(() => {
-        const newTask = {
-            id: Date.now(),
-            title: document.getElementById('taskTitle').value,
-            category: document.getElementById('taskCategory').value,
-            desc: document.getElementById('taskDesc').value,
-            priority: document.getElementById('taskPriority').value,
-            completed: false,
-            date: new Date().toISOString().split('T')[0]
-        };
-        state.tasks.push(newTask);
+        const taskId = document.getElementById('taskId').value;
+        const title = document.getElementById('taskTitle').value;
+        const category = document.getElementById('taskCategory').value;
+        const desc = document.getElementById('taskDesc').value;
+        const priority = document.getElementById('taskPriority').value;
+
+        if (taskId) {
+            // Edit existing
+            const task = state.tasks.find(x => x.id == taskId);
+            if (task) {
+                task.title = title;
+                task.category = category;
+                task.desc = desc;
+                task.priority = priority;
+            }
+        } else {
+            // Add new
+            const newTask = {
+                id: Date.now(),
+                title: title,
+                category: category,
+                desc: desc,
+                priority: priority,
+                completed: false,
+                date: new Date().toISOString().split('T')[0]
+            };
+            state.tasks.push(newTask);
+        }
+
         saveData();
         renderTasks();
         closeTaskModal();
