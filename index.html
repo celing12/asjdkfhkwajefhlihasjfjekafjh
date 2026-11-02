@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Life & Finance Workspace</title>
+    <title>Life & Finance Workspace - Arman Tazkia Maulidan</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -55,13 +55,19 @@
             </div>
 
             <div class="border-t border-slate-100 pt-4">
-                <div class="flex items-center gap-3 px-2">
-                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-medium text-xs">
-                        USER
+                <div class="flex items-center gap-3 px-2 relative group">
+                    <!-- Profile Picture Container with Upload Trigger -->
+                    <div class="relative w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center text-slate-500 font-medium text-xs border border-slate-200 cursor-pointer shadow-inner flex-shrink-0" onclick="document.getElementById('profileImageInput').click()" title="Klik untuk ganti foto profil">
+                        <img id="sidebarProfileImg" src="" alt="Profil" class="w-full h-full object-cover hidden">
+                        <span id="sidebarProfilePlaceholder" class="text-xs font-bold text-slate-600">AT</span>
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px]">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-800">Siswa / Anggota OSIS</p>
-                        <p class="text-[10px] text-slate-400">Aktif</p>
+                    <input type="file" id="profileImageInput" accept="image/*" class="hidden" onchange="handleProfileImageUpload(event)">
+                    <div class="overflow-hidden">
+                        <p class="text-xs font-bold text-slate-800 truncate">Arman Tazkia Maulidan</p>
+                        <p class="text-[10px] text-emerald-600 font-medium">Personal Workspace</p>
                     </div>
                 </div>
             </div>
@@ -109,7 +115,7 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                         <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-chart-donut text-emerald-600"></i> Alokasi Keuangan Total
+                            <i class="fa-solid fa-chart-pie text-emerald-600"></i> Alokasi Keuangan Total
                         </h3>
                         <div class="h-64 relative flex items-center justify-center">
                             <canvas id="financialOverviewChart"></canvas>
@@ -132,7 +138,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-bold text-slate-900">Catatan & Pembelajaran</h2>
-                        <p class="text-slate-500 text-sm">Kelola tugas sekolah, kegiatan OSIS, dan rangkuman materi ilmu.</p>
+                        <p class="text-slate-500 text-sm">Kelola tugas sekolah, kegiatan pribadi, dan rangkuman materi ilmu.</p>
                     </div>
                     <button onclick="openTaskModal()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-600/20 flex items-center gap-2 transition-all">
                         <i class="fa-solid fa-plus"></i> Tambah Catatan
@@ -142,7 +148,7 @@
                 <!-- Category Filters -->
                 <div class="flex items-center gap-2 border-b border-slate-200 pb-4">
                     <button onclick="filterTasks('all')" id="task-tab-all" class="px-4 py-2 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all">Semua</button>
-                    <button onclick="filterTasks('osis')" id="task-tab-osis" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">Tugas OSIS</button>
+                    <button onclick="filterTasks('osis')" id="task-tab-osis" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">Tugas Utama</button>
                     <button onclick="filterTasks('kelas')" id="task-tab-kelas" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">Tugas Kelas</button>
                     <button onclick="filterTasks('ilmu')" id="task-tab-ilmu" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">Ilmu Dipelajari</button>
                 </div>
@@ -261,7 +267,7 @@
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Kategori</label>
                     <select id="taskCategory" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                        <option value="osis">Tugas OSIS</option>
+                        <option value="osis">Tugas Utama</option>
                         <option value="kelas">Tugas Kelas</option>
                         <option value="ilmu">Catatan Ilmu</option>
                     </select>
@@ -366,7 +372,7 @@
             <form id="targetForm" onsubmit="handleTargetSubmit(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Nama Barang</label>
-                    <input type="text" id="targetName" required placeholder="Misal: Laptop Baru, Sepatu" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    <input type="text" id="targetName" required placeholder="Misal: Laptop Baru, Buku, dll" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Harga Target (Rp)</label>

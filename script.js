@@ -1,18 +1,10 @@
-// App State & Local Storage Initialization
+// App State & Local Storage Initialization (Reset to empty/clean state)
 let state = {
-    tasks: JSON.parse(localStorage.getItem('workspace_tasks')) || [
-        { id: 1, title: 'Menyusun Proposal Bulan Bahasa', category: 'osis', desc: 'Rancangan susunan panitia & anggaran', priority: 'high', completed: false, date: '2026-10-15' },
-        { id: 2, title: 'Tugas Kimia Larutan Asam Basa', category: 'kelas', desc: 'Halaman 45 nomor 1-10', priority: 'medium', completed: false, date: '2026-10-18' },
-        { id: 3, title: 'Pemrograman Dasar JS & Flexbox', category: 'ilmu', desc: 'Memahami DOM manipulation & layout responsif', priority: 'low', completed: true, date: '2026-10-10' }
-    ],
-    savings: parseFloat(localStorage.getItem('workspace_savings')) || 500000,
-    targets: JSON.parse(localStorage.getItem('workspace_targets')) || [
-        { id: 101, name: 'Sepatu Olahraga', price: 650000, collected: 400000, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500' }
-    ],
-    history: JSON.parse(localStorage.getItem('workspace_history')) || [
-        { id: 1, date: '2026-10-01', type: 'masuk', category: 'tabungan', targetName: '-', amount: 500000, note: 'Setoran Awal Tabungan' },
-        { id: 2, date: '2026-10-05', type: 'masuk', category: 'target', targetName: 'Sepatu Olahraga', amount: 400000, note: 'Uang Saku' }
-    ]
+    tasks: JSON.parse(localStorage.getItem('workspace_tasks')) || [],
+    savings: parseFloat(localStorage.getItem('workspace_savings')) || 0,
+    targets: JSON.parse(localStorage.getItem('workspace_targets')) || [],
+    history: JSON.parse(localStorage.getItem('workspace_history')) || [],
+    profileImg: localStorage.getItem('workspace_profile_img') || ''
 };
 
 let currentTaskFilter = 'all';
@@ -39,6 +31,7 @@ function saveData() {
     localStorage.setItem('workspace_savings', state.savings.toString());
     localStorage.setItem('workspace_targets', JSON.stringify(state.targets));
     localStorage.setItem('workspace_history', JSON.stringify(state.history));
+    localStorage.setItem('workspace_profile_img', state.profileImg);
 }
 
 // Helper: Format Rupiah
@@ -48,10 +41,41 @@ function formatRp(num) {
 
 // DOM Loaded Initialization
 document.addEventListener('DOMContentLoaded', () => {
+    loadProfileImage();
     renderDashboard();
     renderTasks();
     renderFinance();
 });
+
+// --- Profile Image Upload Handler ---
+function handleProfileImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    showSpinner("Mengunggah foto profil...");
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        state.profileImg = e.target.result;
+        saveData();
+        loadProfileImage();
+        hideSpinner();
+    };
+    reader.readAsDataURL(file);
+}
+
+function loadProfileImage() {
+    const imgElement = document.getElementById('sidebarProfileImg');
+    const placeholderElement = document.getElementById('sidebarProfilePlaceholder');
+
+    if (state.profileImg) {
+        imgElement.src = state.profileImg;
+        imgElement.classList.remove('hidden');
+        placeholderElement.classList.add('hidden');
+    } else {
+        imgElement.classList.add('hidden');
+        placeholderElement.classList.remove('hidden');
+    }
+}
 
 // --- Navigation Tabs ---
 function switchTab(tab) {
@@ -106,7 +130,7 @@ function renderTasks() {
             kelas: 'bg-blue-50 text-blue-600 border-blue-200',
             ilmu: 'bg-emerald-50 text-emerald-600 border-emerald-200'
         };
-        const catLabel = { osis: 'Tugas OSIS', kelas: 'Tugas Kelas', ilmu: 'Catatan Ilmu' }[task.category];
+        const catLabel = { osis: 'Tugas Utama', kelas: 'Tugas Kelas', ilmu: 'Catatan Ilmu' }[task.category];
         const priorityColors = { low: 'text-slate-400', medium: 'text-amber-500', high: 'text-rose-500' };
 
         const card = document.createElement('div');
@@ -205,7 +229,6 @@ function filterFinance(cat) {
 function renderFinance() {
     const totalCollectedTarget = state.targets.reduce((acc, curr) => acc + curr.collected, 0);
 
-    // Update Overview Header Card based on Filter
     const cardTitle = document.getElementById('finCardTitle');
     const cardAmount = document.getElementById('finCardAmount');
     const wishlistSection = document.getElementById('targetBarangSection');
@@ -308,7 +331,7 @@ function renderFinanceHistory() {
                     ${isMasuk ? 'Uang Masuk' : 'Penarikan'}
                 </span>
             </td>
-            <td class="py-3 px-2 font-medium text-slate-700">${item.category === 'tabungan' ? 'Tabungan J Jangka Panjang' : item.targetName}</td>
+            <td class="py-3 px-2 font-medium text-slate-700">${item.category === 'tabungan' ? 'Tabungan Jangka Panjang' : item.targetName}</td>
             <td class="py-3 px-2 font-bold ${isMasuk ? 'text-emerald-600' : 'text-rose-600'}">${isMasuk ? '+' : '-'}${formatRp(item.amount)}</td>
             <td class="py-3 px-2 text-xs text-slate-500">${item.note}</td>
         `;
@@ -322,12 +345,19 @@ function openFinanceModal() {
     const targetSelect = document.getElementById('finTargetId');
     targetSelect.innerHTML = '';
 
-    state.targets.forEach(t => {
+    if (state.targets.length === 0) {
         const opt = document.createElement('option');
-        opt.value = t.id;
-        opt.innerText = `${t.name} (Sisa: ${formatRp(Math.max(0, t.price - t.collected))})`;
+        opt.value = "";
+        opt.innerText = "Belum ada target barang (tambah dulu)";
         targetSelect.appendChild(opt);
-    });
+    } else {
+        state.targets.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.innerText = `${t.name} (Sisa: ${formatRp(Math.max(0, t.price - t.collected))})`;
+            targetSelect.appendChild(opt);
+        });
+    }
 
     toggleTargetSelect();
     document.getElementById('financeModal').classList.remove('hidden');
@@ -344,10 +374,15 @@ function toggleTargetSelect() {
 
 function handleFinanceSubmit(e) {
     e.preventDefault();
+    const dest = document.getElementById('finDestination').value;
+    if (dest === 'target' && state.targets.length === 0) {
+        alert("Harap buat target barang impian terlebih dahulu sebelum mengalokasikan dana ke target barang.");
+        return;
+    }
+
     showSpinner("Mengalokasikan dana...");
     setTimeout(() => {
         const amount = parseFloat(document.getElementById('finAmount').value);
-        const dest = document.getElementById('finDestination').value;
         const note = document.getElementById('finNote').value || 'Uang Masuk';
 
         let targetName = '-';
@@ -386,12 +421,19 @@ function openWithdrawModal() {
     const targetSelect = document.getElementById('withdrawTargetId');
     targetSelect.innerHTML = '';
 
-    state.targets.forEach(t => {
+    if (state.targets.length === 0) {
         const opt = document.createElement('option');
-        opt.value = t.id;
-        opt.innerText = `${t.name} (Terkumpul: ${formatRp(t.collected)})`;
+        opt.value = "";
+        opt.innerText = "Belum ada target barang";
         targetSelect.appendChild(opt);
-    });
+    } else {
+        state.targets.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.innerText = `${t.name} (Terkumpul: ${formatRp(t.collected)})`;
+            targetSelect.appendChild(opt);
+        });
+    }
 
     toggleWithdrawSourceSelect();
     document.getElementById('withdrawModal').classList.remove('hidden');
@@ -425,6 +467,10 @@ function handleWithdrawSubmit(e) {
             recordWithdrawal(src, targetName, amount, reason);
         }, 300);
     } else if (src === 'target') {
+        if (state.targets.length === 0) {
+            alert("Tidak ada target barang.");
+            return;
+        }
         const targetId = parseInt(document.getElementById('withdrawTargetId').value);
         const targetObj = state.targets.find(t => t.id === targetId);
         if (!targetObj) return;
@@ -490,7 +536,7 @@ function deleteTarget(id) {
     setTimeout(() => {
         const t = state.targets.find(x => x.id === id);
         if (t) {
-            state.savings += t.collected; // Kembalikan ke tabungan
+            state.savings += t.collected;
             state.targets = state.targets.filter(x => x.id !== id);
         }
         saveData();
@@ -511,7 +557,7 @@ function exportToCSV() {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Laporan_Keuangan_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute("download", `Laporan_Keuangan_Arman_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -536,7 +582,6 @@ function renderDashboard() {
     const pendingCount = state.tasks.filter(t => !t.completed).length;
     document.getElementById('dash-pending-tasks').innerText = pendingCount;
 
-    // Overview Finance Donut Chart
     const ctx1 = document.getElementById('financialOverviewChart').getContext('2d');
     if (charts.overview) charts.overview.destroy();
 
@@ -557,7 +602,6 @@ function renderDashboard() {
         }
     });
 
-    // Tasks Progress Bar Chart
     const ctx2 = document.getElementById('tasksProgressChart').getContext('2d');
     if (charts.tasks) charts.tasks.destroy();
 
@@ -569,7 +613,7 @@ function renderDashboard() {
     charts.tasks = new Chart(ctx2, {
         type: 'bar',
         data: {
-            labels: ['Tugas OSIS', 'Tugas Kelas'],
+            labels: ['Tugas Utama', 'Tugas Kelas'],
             datasets: [
                 { label: 'Selesai', data: [osisCompleted, kelasCompleted], backgroundColor: '#059669' },
                 { label: 'Pending', data: [osisPending, kelasPending], backgroundColor: '#f59e0b' }
@@ -605,7 +649,6 @@ function renderFinanceCategoryChart() {
         });
     } else if (currentFinanceFilter === 'tabungan') {
         labelTag.innerText = 'Tabungan Jangka Panjang';
-        const masukCount = state.history.filter(h => h.category === 'tabungan' && h.type === 'masuk').reduce((a, c) => a + c.amount, 0);
         const tarikCount = state.history.filter(h => h.category === 'tabungan' && h.type === 'tarik').reduce((a, c) => a + c.amount, 0);
 
         charts.categoryChart = new Chart(ctx, {
