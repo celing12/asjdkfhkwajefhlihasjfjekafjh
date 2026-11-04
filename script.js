@@ -3,7 +3,7 @@ const SUPABASE_URL = 'https://utrhezymrxngbyzzfzmw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0cmhlenltcnhuZ2J5enpmem13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM3OTE1MDMsImV4cCI6MjEwOTM2NzUwM30.opXTCl6t0HIEwBrAvNPtSnh3NOr2kH9oQi7inQfrq18';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// App State
+// 1. Inisialisasi State di atas segalanya agar tidak error "Cannot access before initialization"
 let state = {
     tasks: [],
     savings: 0,
@@ -35,23 +35,19 @@ function formatRp(num) {
     return 'Rp ' + Number(num).toLocaleString('id-ID');
 }
 
-// --- LOAD DATA DARI SUPABASE SAAT HALAMAN DIBUKA ---
+// 2. Load Data dari Supabase
 async function loadDataFromCloud() {
     showSpinner("Menghubungkan ke Database Cloud...");
     try {
-        // 1. Ambil Tasks
         const { data: tasksData } = await _supabase.from('tasks').select('*');
         if (tasksData) state.tasks = tasksData;
 
-        // 2. Ambil Savings
         const { data: summaryData } = await _supabase.from('finance_summary').select('savings').eq('id', 1).single();
         if (summaryData) state.savings = summaryData.savings;
 
-        // 3. Ambil Targets
         const { data: targetsData } = await _supabase.from('targets').select('*');
         if (targetsData) state.targets = targetsData;
 
-        // 4. Ambil History
         const { data: historyData } = await _supabase.from('history').select('*');
         if (historyData) state.history = historyData;
 
