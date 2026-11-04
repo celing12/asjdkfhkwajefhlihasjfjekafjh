@@ -1,9 +1,14 @@
-// App State & Local Storage Initialization
+// --- INISIALISASI SUPABASE ---
+const SUPABASE_URL = 'https://utrhezymrxngbyzzfzmw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0cmhlenltcnhuZ2J5enpmem13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM3OTE1MDMsImV4cCI6MjEwOTM2NzUwM30.opXTCl6t0HIEwBrAvNPtSnh3NOr2kH9oQi7inQfrq18';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// App State
 let state = {
-    tasks: JSON.parse(localStorage.getItem('workspace_tasks')) || [],
-    savings: parseFloat(localStorage.getItem('workspace_savings')) || 0,
-    targets: JSON.parse(localStorage.getItem('workspace_targets')) || [],
-    history: JSON.parse(localStorage.getItem('workspace_history')) || [],
+    tasks: [],
+    savings: 0,
+    targets: [],
+    history: [],
     profileImg: localStorage.getItem('workspace_profile_img') || ''
 };
 
@@ -25,29 +30,48 @@ function hideSpinner() {
     setTimeout(() => spinner.classList.add('hidden'), 300);
 }
 
-// Save to LocalStorage
-function saveData() {
-    localStorage.setItem('workspace_tasks', JSON.stringify(state.tasks));
-    localStorage.setItem('workspace_savings', state.savings.toString());
-    localStorage.setItem('workspace_targets', JSON.stringify(state.targets));
-    localStorage.setItem('workspace_history', JSON.stringify(state.history));
-    localStorage.setItem('workspace_profile_img', state.profileImg);
-}
-
 // Helper: Format Rupiah
 function formatRp(num) {
     return 'Rp ' + Number(num).toLocaleString('id-ID');
 }
 
+// --- LOAD DATA DARI SUPABASE SAAT HALAMAN DIBUKA ---
+async function loadDataFromCloud() {
+    showSpinner("Menghubungkan ke Database Cloud...");
+    try {
+        // 1. Ambil Tasks
+        const { data: tasksData } = await _supabase.from('tasks').select('*');
+        if (tasksData) state.tasks = tasksData;
+
+        // 2. Ambil Savings
+        const { data: summaryData } = await _supabase.from('finance_summary').select('savings').eq('id', 1).single();
+        if (summaryData) state.savings = summaryData.savings;
+
+        // 3. Ambil Targets
+        const { data: targetsData } = await _supabase.from('targets').select('*');
+        if (targetsData) state.targets = targetsData;
+
+        // 4. Ambil History
+        const { data: historyData } = await _supabase.from('history').select('*');
+        if (historyData) state.history = historyData;
+
+    } catch (err) {
+        console.error("Gagal memuat data dari Supabase:", err);
+    } finally {
+        hideSpinner();
+        loadProfileImage();
+        renderDashboard();
+        renderTasks();
+        renderFinance();
+    }
+}
+
 // DOM Loaded Initialization
 document.addEventListener('DOMContentLoaded', () => {
-    loadProfileImage();
-    renderDashboard();
-    renderTasks();
-    renderFinance();
+    loadDataFromCloud();
 });
 
-// --- Profile Image Upload Handler ---
+// --- Profile Image (Tetap di LocalStorage karena berupa file gambar) ---
 function handleProfileImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -56,7 +80,7 @@ function handleProfileImageUpload(event) {
     const reader = new FileReader();
     reader.onload = function(e) {
         state.profileImg = e.target.result;
-        saveData();
+        localStorage.setItem('workspace_profile_img', state.profileImg);
         loadProfileImage();
         hideSpinner();
     };
@@ -92,18 +116,18 @@ function switchTab(tab) {
         if (tab === 'tasks') renderTasks();
         if (tab === 'finance') renderFinance();
         hideSpinner();
-    }, 250);
+    }, 200);
 }
 
-// --- TASKS MODULE ---
+// --- TASKS MODULE (SUPABASE SYNC) ---
 function filterTasks(cat) {
     currentTaskFilter = cat;
     ['all', 'osis', 'kelas', 'ilmu'].forEach(c => {
         const btn = document.getElementById(`task-tab-${c}`);
         if (c === cat) {
-            btn.className = "px-4 py-2 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all";
+            btn.className = "px-4 py-2 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all whitespace-nowrap";
         } else {
-            btn.className = "px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all";
+            btn.className = "px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap";
         }
     });
     renderTasks();
@@ -142,15 +166,15 @@ function renderTasks() {
                     <i class="fa-solid fa-flag text-xs ${priorityColors[task.priority]}"></i>
                 </div>
                 <h4 class="font-bold text-slate-800 text-base ${task.completed ? 'line-through text-slate-400' : ''}">${task.title}</h4>
-                <p class="text-xs text-slate-600 mt-2 whitespace-pre-line bg-slate-50 p-2.5 rounded-xl border border-slate-100">${task.desc || 'Tidak ada isi catatan.'}</p>
+                <p class="text-xs text-slate-600 mt-2 whitespace-pre-line bg-slate-50 p-2.5 rounded-xl border border-slate-100">${task.description || 'Tidak ada isi catatan.'}</p>
             </div>
             <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
                 <span class="text-slate-400"><i class="fa-regular fa-calendar text-[10px] mr-1"></i>${task.date}</span>
                 <div class="flex gap-2">
-                    <button onclick="editTask(${task.id})" class="text-blue-500 hover:text-blue-700 font-semibold" title="Edit Catatan">
+                    <button onclick="editTask(${task.id})" class="text-blue-500 hover:text-blue-700 font-semibold" title="Edit">
                         <i class="fa-solid fa-pen"></i>
                     </button>
-                    <button onclick="toggleTask(${task.id})" class="text-emerald-600 hover:text-emerald-700 font-semibold" title="Selesai / Buka">
+                    <button onclick="toggleTask(${task.id})" class="text-emerald-600 hover:text-emerald-700 font-semibold" title="Selesai">
                         <i class="fa-solid ${task.completed ? 'fa-rotate-left' : 'fa-check'}"></i>
                     </button>
                     <button onclick="deleteTask(${task.id})" class="text-rose-500 hover:text-rose-700 font-semibold" title="Hapus">
@@ -185,7 +209,7 @@ function openTaskModal(taskId = null) {
             document.getElementById('taskId').value = task.id;
             document.getElementById('taskTitle').value = task.title;
             document.getElementById('taskCategory').value = task.category;
-            document.getElementById('taskDesc').value = task.desc;
+            document.getElementById('taskDesc').value = task.description;
             document.getElementById('taskPriority').value = task.priority;
             document.getElementById('taskModalTitle').innerText = 'Edit Catatan';
             updateTaskFormLabel();
@@ -196,91 +220,80 @@ function openTaskModal(taskId = null) {
 }
 
 function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); }
+function editTask(id) { openTaskModal(id); }
 
-function editTask(id) {
-    openTaskModal(id);
-}
-
-function handleTaskSubmit(e) {
+async function handleTaskSubmit(e) {
     e.preventDefault();
-    showSpinner("Menyimpan catatan...");
-    setTimeout(() => {
-        const taskId = document.getElementById('taskId').value;
-        const title = document.getElementById('taskTitle').value;
-        const category = document.getElementById('taskCategory').value;
-        const desc = document.getElementById('taskDesc').value;
-        const priority = document.getElementById('taskPriority').value;
+    showSpinner("Menyimpan ke Cloud...");
 
-        if (taskId) {
-            // Edit existing
-            const task = state.tasks.find(x => x.id == taskId);
-            if (task) {
-                task.title = title;
-                task.category = category;
-                task.desc = desc;
-                task.priority = priority;
-            }
-        } else {
-            // Add new
-            const newTask = {
-                id: Date.now(),
-                title: title,
-                category: category,
-                desc: desc,
-                priority: priority,
-                completed: false,
-                date: new Date().toISOString().split('T')[0]
-            };
-            state.tasks.push(newTask);
+    const taskId = document.getElementById('taskId').value;
+    const title = document.getElementById('taskTitle').value;
+    const category = document.getElementById('taskCategory').value;
+    const description = document.getElementById('taskDesc').value;
+    const priority = document.getElementById('taskPriority').value;
+
+    if (taskId) {
+        const task = state.tasks.find(x => x.id == taskId);
+        if (task) {
+            task.title = title;
+            task.category = category;
+            task.description = description;
+            task.priority = priority;
+
+            await _supabase.from('tasks').update({ title, category, description, priority }).eq('id', taskId);
         }
+    } else {
+        const newTask = {
+            id: Date.now(),
+            title: title,
+            category: category,
+            description: description,
+            priority: priority,
+            completed: false,
+            date: new Date().toISOString().split('T')[0]
+        };
+        state.tasks.push(newTask);
+        await _supabase.from('tasks').insert([newTask]);
+    }
 
-        saveData();
-        renderTasks();
-        closeTaskModal();
-        document.getElementById('taskForm').reset();
-        hideSpinner();
-    }, 300);
+    renderTasks();
+    closeTaskModal();
+    document.getElementById('taskForm').reset();
+    hideSpinner();
 }
 
-function toggleTask(id) {
+async function toggleTask(id) {
     showSpinner("Updating status...");
-    setTimeout(() => {
-        const t = state.tasks.find(x => x.id === id);
-        if (t) t.completed = !t.completed;
-        saveData();
-        renderTasks();
-        hideSpinner();
-    }, 200);
+    const t = state.tasks.find(x => x.id === id);
+    if (t) {
+        t.completed = !t.completed;
+        await _supabase.from('tasks').update({ completed: t.completed }).eq('id', id);
+    }
+    renderTasks();
+    hideSpinner();
 }
 
-function deleteTask(id) {
+async function deleteTask(id) {
     if (!confirm("Hapus catatan ini?")) return;
     showSpinner("Menghapus...");
-    setTimeout(() => {
-        state.tasks = state.tasks.filter(x => x.id !== id);
-        saveData();
-        renderTasks();
-        hideSpinner();
-    }, 200);
+    state.tasks = state.tasks.filter(x => x.id !== id);
+    await _supabase.from('tasks').delete().eq('id', id);
+    renderTasks();
+    hideSpinner();
 }
 
-// --- FINANCE MODULE ---
+// --- FINANCE MODULE (SUPABASE SYNC) ---
 function filterFinance(cat) {
     currentFinanceFilter = cat;
     ['all', 'tabungan', 'target'].forEach(c => {
         const btn = document.getElementById(`fin-tab-${c}`);
         if (c === cat) {
-            btn.className = "px-4 py-2 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all";
+            btn.className = "px-4 py-2 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all whitespace-nowrap";
         } else {
-            btn.className = "px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all";
+            btn.className = "px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap";
         }
     });
-
-    showSpinner("Memuat filter...");
-    setTimeout(() => {
-        renderFinance();
-        hideSpinner();
-    }, 200);
+    renderFinance();
 }
 
 function renderFinance() {
@@ -388,7 +401,7 @@ function renderFinanceHistory() {
                     ${isMasuk ? 'Uang Masuk' : 'Penarikan'}
                 </span>
             </td>
-            <td class="py-3 px-2 font-medium text-slate-700">${item.category === 'tabungan' ? 'Tabungan Jangka Panjang' : item.targetName}</td>
+            <td class="py-3 px-2 font-medium text-slate-700">${item.category === 'tabungan' ? 'Tabungan Jangka Panjang' : item.target_name}</td>
             <td class="py-3 px-2 font-bold ${isMasuk ? 'text-emerald-600' : 'text-rose-600'}">${isMasuk ? '+' : '-'}${formatRp(item.amount)}</td>
             <td class="py-3 px-2 text-xs text-slate-500">${item.note}</td>
         `;
@@ -398,7 +411,6 @@ function renderFinanceHistory() {
 
 // --- MODAL & ACTION HANDLERS ---
 function openFinanceModal() {
-    const targetGroup = document.getElementById('targetBarangSelectGroup');
     const targetSelect = document.getElementById('finTargetId');
     targetSelect.innerHTML = '';
 
@@ -429,51 +441,50 @@ function toggleTargetSelect() {
     else group.classList.add('hidden');
 }
 
-function handleFinanceSubmit(e) {
+async function handleFinanceSubmit(e) {
     e.preventDefault();
     const dest = document.getElementById('finDestination').value;
     if (dest === 'target' && state.targets.length === 0) {
-        alert("Harap buat target barang impian terlebih dahulu sebelum mengalokasikan dana ke target barang.");
+        alert("Harap buat target barang impian terlebih dahulu.");
         return;
     }
 
-    showSpinner("Mengalokasikan dana...");
-    setTimeout(() => {
-        const amount = parseFloat(document.getElementById('finAmount').value);
-        const note = document.getElementById('finNote').value || 'Uang Masuk';
+    showSpinner("Menyimpan ke Cloud...");
+    const amount = parseFloat(document.getElementById('finAmount').value);
+    const note = document.getElementById('finNote').value || 'Uang Masuk';
+    let targetName = '-';
 
-        let targetName = '-';
-
-        if (dest === 'tabungan') {
-            state.savings += amount;
-        } else if (dest === 'target') {
-            const targetId = parseInt(document.getElementById('finTargetId').value);
-            const targetObj = state.targets.find(t => t.id === targetId);
-            if (targetObj) {
-                targetObj.collected += amount;
-                targetName = targetObj.name;
-            }
+    if (dest === 'tabungan') {
+        state.savings += amount;
+        await _supabase.from('finance_summary').update({ savings: state.savings }).eq('id', 1);
+    } else if (dest === 'target') {
+        const targetId = parseInt(document.getElementById('finTargetId').value);
+        const targetObj = state.targets.find(t => t.id === targetId);
+        if (targetObj) {
+            targetObj.collected += amount;
+            targetName = targetObj.name;
+            await _supabase.from('targets').update({ collected: targetObj.collected }).eq('id', targetId);
         }
+    }
 
-        state.history.push({
-            id: Date.now(),
-            date: new Date().toISOString().split('T')[0],
-            type: 'masuk',
-            category: dest,
-            targetName: targetName,
-            amount: amount,
-            note: note
-        });
+    const newHistory = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        type: 'masuk',
+        category: dest,
+        target_name: targetName,
+        amount: amount,
+        note: note
+    };
+    state.history.push(newHistory);
+    await _supabase.from('history').insert([newHistory]);
 
-        saveData();
-        renderFinance();
-        closeFinanceModal();
-        document.getElementById('financeForm').reset();
-        hideSpinner();
-    }, 300);
+    renderFinance();
+    closeFinanceModal();
+    document.getElementById('financeForm').reset();
+    hideSpinner();
 }
 
-// Withdrawal Modal Handlers
 function openWithdrawModal() {
     const targetSelect = document.getElementById('withdrawTargetId');
     targetSelect.innerHTML = '';
@@ -505,12 +516,11 @@ function toggleWithdrawSourceSelect() {
     else group.classList.add('hidden');
 }
 
-function handleWithdrawSubmit(e) {
+async function handleWithdrawSubmit(e) {
     e.preventDefault();
     const amount = parseFloat(document.getElementById('withdrawAmount').value);
     const src = document.getElementById('withdrawSource').value;
     const reason = document.getElementById('withdrawReason').value;
-
     let targetName = '-';
 
     if (src === 'tabungan') {
@@ -519,87 +529,80 @@ function handleWithdrawSubmit(e) {
             return;
         }
         showSpinner("Proses penarikan...");
-        setTimeout(() => {
-            state.savings -= amount;
-            recordWithdrawal(src, targetName, amount, reason);
-        }, 300);
+        state.savings -= amount;
+        await _supabase.from('finance_summary').update({ savings: state.savings }).eq('id', 1);
+        recordWithdrawal(src, targetName, amount, reason);
     } else if (src === 'target') {
-        if (state.targets.length === 0) {
-            alert("Tidak ada target barang.");
-            return;
-        }
+        if (state.targets.length === 0) return;
         const targetId = parseInt(document.getElementById('withdrawTargetId').value);
         const targetObj = state.targets.find(t => t.id === targetId);
         if (!targetObj) return;
 
         if (amount > targetObj.collected) {
-            alert("Nominal penarikan melebihi saldo yang terkumpul pada barang ini!");
+            alert("Nominal penarikan melebihi saldo barang ini!");
             return;
         }
         showSpinner("Proses penarikan...");
-        setTimeout(() => {
-            targetObj.collected -= amount;
-            targetName = targetObj.name;
-            recordWithdrawal(src, targetName, amount, reason);
-        }, 300);
+        targetObj.collected -= amount;
+        targetName = targetObj.name;
+        await _supabase.from('targets').update({ collected: targetObj.collected }).eq('id', targetId);
+        recordWithdrawal(src, targetName, amount, reason);
     }
 }
 
-function recordWithdrawal(src, targetName, amount, reason) {
-    state.history.push({
+async function recordWithdrawal(src, targetName, amount, reason) {
+    const newHistory = {
         id: Date.now(),
         date: new Date().toISOString().split('T')[0],
         type: 'tarik',
         category: src,
-        targetName: targetName,
+        target_name: targetName,
         amount: amount,
         note: reason
-    });
+    };
+    state.history.push(newHistory);
+    await _supabase.from('history').insert([newHistory]);
 
-    saveData();
     renderFinance();
     closeWithdrawModal();
     document.getElementById('withdrawForm').reset();
     hideSpinner();
 }
 
-// Wishlist Target Handlers
 function openTargetModal() { document.getElementById('targetModal').classList.remove('hidden'); }
 function closeTargetModal() { document.getElementById('targetModal').classList.add('hidden'); }
 
-function handleTargetSubmit(e) {
+async function handleTargetSubmit(e) {
     e.preventDefault();
     showSpinner("Menambahkan target barang...");
-    setTimeout(() => {
-        const newTarget = {
-            id: Date.now(),
-            name: document.getElementById('targetName').value,
-            price: parseFloat(document.getElementById('targetPrice').value),
-            collected: 0,
-            image: document.getElementById('targetImage').value || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500'
-        };
-        state.targets.push(newTarget);
-        saveData();
-        renderFinance();
-        closeTargetModal();
-        document.getElementById('targetForm').reset();
-        hideSpinner();
-    }, 300);
+    const newTarget = {
+        id: Date.now(),
+        name: document.getElementById('targetName').value,
+        price: parseFloat(document.getElementById('targetPrice').value),
+        collected: 0,
+        image: document.getElementById('targetImage').value || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500'
+    };
+    state.targets.push(newTarget);
+    await _supabase.from('targets').insert([newTarget]);
+
+    renderFinance();
+    closeTargetModal();
+    document.getElementById('targetForm').reset();
+    hideSpinner();
 }
 
-function deleteTarget(id) {
-    if (!confirm("Hapus target barang ini? Saldo terkumpul pada barang ini akan disatukan kembali ke tabungan.")) return;
+async function deleteTarget(id) {
+    if (!confirm("Hapus target barang ini? Saldo terkumpul akan dikembalikan ke tabungan.")) return;
     showSpinner("Menghapus target...");
-    setTimeout(() => {
-        const t = state.targets.find(x => x.id === id);
-        if (t) {
-            state.savings += t.collected;
-            state.targets = state.targets.filter(x => x.id !== id);
-        }
-        saveData();
-        renderFinance();
-        hideSpinner();
-    }, 300);
+    const t = state.targets.find(x => x.id === id);
+    if (t) {
+        state.savings += t.collected;
+        state.targets = state.targets.filter(x => x.id !== id);
+        await _supabase.from('finance_summary').update({ savings: state.savings }).eq('id', 1);
+        await _supabase.from('targets').delete().eq('id', id);
+    }
+    renderFinance();
+    hideSpinner();
 }
 
 // --- EXPORT FUNCTIONS ---
@@ -608,7 +611,7 @@ function exportToCSV() {
     setTimeout(() => {
         let csvContent = "data:text/csv;charset=utf-8,Tanggal,Jenis,Kategori/Barang,Nominal,Catatan/Alasan\n";
         state.history.forEach(row => {
-            csvContent += `${row.date},${row.type},${row.category === 'tabungan' ? 'Tabungan Jangka Panjang' : row.targetName},${row.amount},"${row.note}"\n`;
+            csvContent += `${row.date},${row.type},${row.category === 'tabungan' ? 'Tabungan Jangka Panjang' : row.target_name},${row.amount},"${row.note}"\n`;
         });
 
         const encodedUri = encodeURI(csvContent);
@@ -740,23 +743,20 @@ function renderFinanceCategoryChart() {
     }
 }
 
-// --- FUNGSI HAMBURGER SIDEBAR ---
+// --- HAMBURGER SIDEBAR ---
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
 
     if (sidebar.classList.contains('-translate-x-full')) {
-        // Buka Sidebar
         sidebar.classList.remove('-translate-x-full');
         backdrop.classList.remove('hidden');
     } else {
-        // Tutup Sidebar
         sidebar.classList.add('-translate-x-full');
         backdrop.classList.add('hidden');
     }
 }
 
-// Menutup sidebar secara otomatis ketika salah satu menu tab diklik
 const originalSwitchTab = switchTab;
 switchTab = function(tab) {
     const sidebar = document.getElementById('sidebar');
