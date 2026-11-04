@@ -739,3 +739,31 @@ function renderFinanceCategoryChart() {
         });
     }
 }
+
+// --- FUNGSI HAMBURGER SIDEBAR ---
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+
+    if (sidebar.classList.contains('-translate-x-full')) {
+        // Buka Sidebar
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+    } else {
+        // Tutup Sidebar
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+    }
+}
+
+// Menutup sidebar secara otomatis ketika salah satu menu tab diklik
+const originalSwitchTab = switchTab;
+switchTab = function(tab) {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (!sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+    }
+    originalSwitchTab(tab);
+};

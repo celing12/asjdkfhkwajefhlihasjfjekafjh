@@ -24,232 +24,257 @@
         </div>
     </div>
 
-    <div class="flex min-h-screen">
-        <!-- Sidebar Navigation -->
-        <aside class="w-64 bg-white border-r border-slate-200 p-6 flex flex-col justify-between fixed h-full z-10">
-            <div>
-                <div class="flex items-center gap-3 mb-10 px-2">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-emerald-600/30">
+    <!-- Backdrop Overlay untuk menutup Sidebar saat diklik di luar -->
+    <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-20 hidden transition-opacity duration-300"></div>
+
+    <div class="min-h-screen flex flex-col">
+        <!-- Top Navbar dengan Tombol Hamburger (Garis 3) -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="p-2 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all focus:outline-none" title="Buka Menu Sidebar">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-emerald-600/20">
                         C
                     </div>
-                    <div>
-                        <h1 class="font-bold text-slate-900 text-lg leading-tight">CELING NOTE</h1>
-                        <p class="text-xs text-slate-400">Personal & Financial</p>
-                    </div>
-                </div>
-
-                <nav class="space-y-1">
-                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl text-sm font-medium transition-all group active">
-                        <i class="fa-solid fa-chart-pie w-5 text-center text-slate-400 group-hover:text-emerald-600"></i>
-                        <span>Dashboard</span>
-                    </button>
-                    <button onclick="switchTab('tasks')" id="nav-tasks" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl text-sm font-medium transition-all group">
-                        <i class="fa-solid fa-book-bookmark w-5 text-center text-slate-400 group-hover:text-emerald-600"></i>
-                        <span>Catatan & Tugas</span>
-                    </button>
-                    <button onclick="switchTab('finance')" id="nav-finance" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl text-sm font-medium transition-all group">
-                        <i class="fa-solid fa-wallet w-5 text-center text-slate-400 group-hover:text-emerald-600"></i>
-                        <span>Manajemen Keuangan</span>
-                    </button>
-                </nav>
-            </div>
-
-            <div class="border-t border-slate-100 pt-4">
-                <div class="flex items-center gap-3 px-2 relative group">
-                    <!-- Profile Picture Container with Upload Trigger -->
-                    <div class="relative w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center text-slate-500 font-medium text-xs border border-slate-200 cursor-pointer shadow-inner flex-shrink-0" onclick="document.getElementById('profileImageInput').click()" title="Klik untuk ganti foto profil">
-                        <img id="sidebarProfileImg" src="" alt="Profil" class="w-full h-full object-cover hidden">
-                        <span id="sidebarProfilePlaceholder" class="text-xs font-bold text-slate-600">AT</span>
-                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px]">
-                            <i class="fa-solid fa-camera"></i>
-                        </div>
-                    </div>
-                    <input type="file" id="profileImageInput" accept="image/*" class="hidden" onchange="handleProfileImageUpload(event)">
-                    <div class="overflow-hidden">
-                        <p class="text-xs font-bold text-slate-800 truncate">Arman Tazkia Maulidan</p>
-                        <p class="text-[10px] text-emerald-600 font-medium">Personal Workspace</p>
-                    </div>
+                    <span class="font-bold text-slate-900 text-base">NOTE CELILNG</span>
                 </div>
             </div>
-        </aside>
+            <span class="text-xs font-semibold text-slate-400">Arman Tazkia Maulidan</span>
+        </header>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 ml-64 p-8">
-            
-            <!-- Dashboard View -->
-            <section id="view-dashboard" class="space-y-8">
+        <div class="flex flex-1 relative">
+            <!-- Sidebar Navigation (Tersembunyi secara default dengan -translate-x-full) -->
+            <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 p-6 flex flex-col justify-between fixed top-0 bottom-0 left-0 z-30 transition-transform duration-300 ease-in-out -translate-x-full shadow-2xl">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-900">Ringkasan Aktivitas</h2>
-                    <p class="text-slate-500 text-sm">Pantau kemajuan tugas dan kondisi keuangan Anda.</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Tabungan</span>
-                            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i class="fa-solid fa-piggy-bank"></i></div>
+                    <div class="flex items-center justify-between mb-8 px-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-emerald-600/30">
+                                W
+                            </div>
+                            <div>
+                                <h1 class="font-bold text-slate-900 text-lg leading-tight">Workspace</h1>
+                                <p class="text-xs text-slate-400">Personal & Financial</p>
+                            </div>
                         </div>
-                        <h3 class="text-2xl font-bold text-slate-900" id="dash-savings-total">Rp 0</h3>
-                        <p class="text-xs text-slate-400 mt-1">Alokasi jangka panjang</p>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Terkumpul di Barang</span>
-                            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i class="fa-solid fa-bullseye"></i></div>
-                        </div>
-                        <h3 class="text-2xl font-bold text-slate-900" id="dash-target-total">Rp 0</h3>
-                        <p class="text-xs text-slate-400 mt-1">Dari total target barang</p>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Tugas Belum Selesai</span>
-                            <div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i class="fa-solid fa-clock"></i></div>
-                        </div>
-                        <h3 class="text-2xl font-bold text-slate-900" id="dash-pending-tasks">0</h3>
-                        <p class="text-xs text-slate-400 mt-1">Utama & Kelas</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-chart-pie text-emerald-600"></i> Alokasi Keuangan Total
-                        </h3>
-                        <div class="h-64 relative flex items-center justify-center">
-                            <canvas id="financialOverviewChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-                        <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-tasks text-emerald-600"></i> Progress Catatan & Tugas
-                        </h3>
-                        <div class="h-64 relative flex items-center justify-center">
-                            <canvas id="tasksProgressChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Catatan & Tugas View -->
-            <section id="view-tasks" class="space-y-6 hidden">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">Catatan & Pembelajaran</h2>
-                        <p class="text-slate-500 text-sm">Kelola tugas sekolah, kegiatan pribadi, dan rangkuman materi ilmu.</p>
-                    </div>
-                    <button onclick="openTaskModal()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-600/20 flex items-center gap-2 transition-all">
-                        <i class="fa-solid fa-plus"></i> Tambah Catatan
-                    </button>
-                </div>
-
-                <!-- Category Filters -->
-                <div class="flex items-center gap-2 border-b border-slate-200 pb-4">
-                    <button onclick="filterTasks('all')" id="task-tab-all" class="px-4 py-2 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all">Semua</button>
-                    <button onclick="filterTasks('osis')" id="task-tab-osis" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">Tugas Utama</button>
-                    <button onclick="filterTasks('kelas')" id="task-tab-kelas" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">Tugas Kelas</button>
-                    <button onclick="filterTasks('ilmu')" id="task-tab-ilmu" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">Ilmu Dipelajari</button>
-                </div>
-
-                <!-- Task List Grid -->
-                <div id="tasksGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-            </section>
-
-            <!-- Manajemen Keuangan View -->
-            <section id="view-finance" class="space-y-6 hidden">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">Manajemen Keuangan</h2>
-                        <p class="text-slate-500 text-sm">Kelola alokasi dana, tabungan jangka panjang, dan target barang impian.</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="openWithdrawModal()" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all">
-                            <i class="fa-solid fa-minus-circle"></i> Tarik Uang
-                        </button>
-                        <button onclick="openFinanceModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-600/20 flex items-center gap-2 transition-all">
-                            <i class="fa-solid fa-plus-circle"></i> Tambah Uang Masuk
+                        <button onclick="toggleSidebar()" class="text-slate-400 hover:text-slate-600 p-1">
+                            <i class="fa-solid fa-xmark text-lg"></i>
                         </button>
                     </div>
+
+                    <nav class="space-y-1">
+                        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl text-sm font-medium transition-all group active">
+                            <i class="fa-solid fa-chart-pie w-5 text-center text-slate-400 group-hover:text-emerald-600"></i>
+                            <span>Dashboard</span>
+                        </button>
+                        <button onclick="switchTab('tasks')" id="nav-tasks" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl text-sm font-medium transition-all group">
+                            <i class="fa-solid fa-book-bookmark w-5 text-center text-slate-400 group-hover:text-emerald-600"></i>
+                            <span>Catatan & Tugas</span>
+                        </button>
+                        <button onclick="switchTab('finance')" id="nav-finance" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl text-sm font-medium transition-all group">
+                            <i class="fa-solid fa-wallet w-5 text-center text-slate-400 group-hover:text-emerald-600"></i>
+                            <span>Manajemen Keuangan</span>
+                        </button>
+                    </nav>
                 </div>
 
-                <!-- Finance Category Tabs (3 Options) -->
-                <div class="flex items-center gap-2 border-b border-slate-200 pb-4">
-                    <button onclick="filterFinance('all')" id="fin-tab-all" class="px-4 py-2 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all">Semua Kategori</button>
-                    <button onclick="filterFinance('tabungan')" id="fin-tab-tabungan" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">Tabungan Jangka Panjang</button>
-                    <button onclick="filterFinance('target')" id="fin-tab-target" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">Target Barang / Wishlist</button>
+                <div class="border-t border-slate-100 pt-4">
+                    <div class="flex items-center gap-3 px-2 relative group">
+                        <div class="relative w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center text-slate-500 font-medium text-xs border border-slate-200 cursor-pointer shadow-inner flex-shrink-0" onclick="document.getElementById('profileImageInput').click()" title="Klik untuk ganti foto profil">
+                            <img id="sidebarProfileImg" src="" alt="Profil" class="w-full h-full object-cover hidden">
+                            <span id="sidebarProfilePlaceholder" class="text-xs font-bold text-slate-600">AT</span>
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px]">
+                                <i class="fa-solid fa-camera"></i>
+                            </div>
+                        </div>
+                        <input type="file" id="profileImageInput" accept="image/*" class="hidden" onchange="handleProfileImageUpload(event)">
+                        <div class="overflow-hidden">
+                            <p class="text-xs font-bold text-slate-800 truncate">Arman Tazkia Maulidan</p>
+                            <p class="text-[10px] text-emerald-600 font-medium">Personal Workspace</p>
+                        </div>
+                    </div>
                 </div>
+            </aside>
 
-                <!-- Dynamic Finance Header Overview -->
-                <div id="financeOverviewCard" class="bg-gradient-to-r from-emerald-800 to-emerald-600 text-white p-6 rounded-2xl shadow-xl flex justify-between items-center">
+            <!-- Main Content Area -->
+            <main class="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
+                
+                <!-- Dashboard View -->
+                <section id="view-dashboard" class="space-y-8">
                     <div>
-                        <p id="finCardTitle" class="text-xs uppercase font-semibold text-emerald-200 tracking-wider">Total Alokasi Keuangan</p>
-                        <h3 id="finCardAmount" class="text-3xl font-extrabold mt-1">Rp 0</h3>
+                        <h2 class="text-2xl font-bold text-slate-900">Ringkasan Aktivitas</h2>
+                        <p class="text-slate-500 text-sm">Pantau kemajuan tugas dan kondisi keuangan Anda.</p>
                     </div>
-                    <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md text-xl">
-                        <i class="fa-solid fa-vault"></i>
-                    </div>
-                </div>
 
-                <!-- Wishlist Items Section -->
-                <div id="targetBarangSection" class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
-                            <i class="fa-solid fa-bag-shopping text-emerald-600"></i> Target Barang Impian
-                        </h3>
-                        <button onclick="openTargetModal()" class="text-sm text-emerald-600 font-semibold hover:underline flex items-center gap-1">
-                            <i class="fa-solid fa-plus text-xs"></i> Tambah Target Barang
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Tabungan</span>
+                                <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i class="fa-solid fa-piggy-bank"></i></div>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-900" id="dash-savings-total">Rp 0</h3>
+                            <p class="text-xs text-slate-400 mt-1">Alokasi jangka panjang</p>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Terkumpul di Barang</span>
+                                <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i class="fa-solid fa-bullseye"></i></div>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-900" id="dash-target-total">Rp 0</h3>
+                            <p class="text-xs text-slate-400 mt-1">Dari total target barang</p>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Tugas Belum Selesai</span>
+                                <div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i class="fa-solid fa-clock"></i></div>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-900" id="dash-pending-tasks">0</h3>
+                            <p class="text-xs text-slate-400 mt-1">Organisasi & Kelas</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-pie text-emerald-600"></i> Alokasi Keuangan Total
+                            </h3>
+                            <div class="h-64 relative flex items-center justify-center">
+                                <canvas id="financialOverviewChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-tasks text-emerald-600"></i> Progress Catatan & Tugas
+                            </h3>
+                            <div class="h-64 relative flex items-center justify-center">
+                                <canvas id="tasksProgressChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Catatan & Tugas View -->
+                <section id="view-tasks" class="space-y-6 hidden">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Catatan & Pembelajaran</h2>
+                            <p class="text-slate-500 text-sm">Kelola tugas sekolah, kegiatan pribadi, dan rangkuman materi ilmu.</p>
+                        </div>
+                        <button onclick="openTaskModal()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-600/20 flex items-center gap-2 transition-all">
+                            <i class="fa-solid fa-plus"></i> Tambah Catatan
                         </button>
                     </div>
-                    <div id="wishlistGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-                </div>
 
-                <!-- Professional Analytics Section -->
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                            <i class="fa-solid fa-chart-column text-emerald-600"></i> Analytics & Breakdown Visual
-                        </h3>
-                        <span id="chartCategoryLabel" class="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full">Semua Kategori</span>
+                    <!-- Category Filters -->
+                    <div class="flex items-center gap-2 border-b border-slate-200 pb-4 overflow-x-auto">
+                        <button onclick="filterTasks('all')" id="task-tab-all" class="px-4 py-2 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all whitespace-nowrap">Semua</button>
+                        <button onclick="filterTasks('osis')" id="task-tab-osis" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap">Tugas Utama</button>
+                        <button onclick="filterTasks('kelas')" id="task-tab-kelas" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap">Tugas Kelas</button>
+                        <button onclick="filterTasks('ilmu')" id="task-tab-ilmu" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap">Ilmu Dipelajari</button>
                     </div>
-                    <div class="h-64 relative">
-                        <canvas id="financeCategoryChart"></canvas>
-                    </div>
-                </div>
 
-                <!-- History Logs & Export Actions -->
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                            <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i> Riwayat Mutasi Keuangan
-                        </h3>
+                    <!-- Task List Grid -->
+                    <div id="tasksGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </section>
+
+                <!-- Manajemen Keuangan View -->
+                <section id="view-finance" class="space-y-6 hidden">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Manajemen Keuangan</h2>
+                            <p class="text-slate-500 text-sm">Kelola alokasi dana, tabungan jangka panjang, dan target barang impian.</p>
+                        </div>
                         <div class="flex gap-2">
-                            <button onclick="exportToCSV()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all">
-                                <i class="fa-solid fa-file-excel text-emerald-600"></i> Ekspor Excel/CSV
+                            <button onclick="openWithdrawModal()" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all">
+                                <i class="fa-solid fa-minus-circle"></i> Tarik Uang
                             </button>
-                            <button onclick="exportToPDF()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all">
-                                <i class="fa-solid fa-file-pdf text-rose-600"></i> Cetak / PDF
+                            <button onclick="openFinanceModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-600/20 flex items-center gap-2 transition-all">
+                                <i class="fa-solid fa-plus-circle"></i> Tambah Uang Masuk
                             </button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-sm">
-                            <thead>
-                                <tr class="text-xs uppercase text-slate-400 border-b border-slate-100">
-                                    <th class="py-3 px-2">Tanggal</th>
-                                    <th class="py-3 px-2">Jenis</th>
-                                    <th class="py-3 px-2">Kategori / Barang</th>
-                                    <th class="py-3 px-2">Nominal</th>
-                                    <th class="py-3 px-2">Keterangan / Alasan</th>
-                                </tr>
-                            </thead>
-                            <tbody id="financeHistoryTable" class="divide-y divide-slate-100 text-slate-600"></tbody>
-                        </table>
+
+                    <!-- Finance Category Tabs -->
+                    <div class="flex items-center gap-2 border-b border-slate-200 pb-4 overflow-x-auto">
+                        <button onclick="filterFinance('all')" id="fin-tab-all" class="px-4 py-2 text-sm font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-all whitespace-nowrap">Semua Kategori</button>
+                        <button onclick="filterFinance('tabungan')" id="fin-tab-tabungan" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap">Tabungan Jangka Panjang</button>
+                        <button onclick="filterFinance('target')" id="fin-tab-target" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap">Target Barang / Wishlist</button>
                     </div>
-                </div>
-            </section>
-        </main>
+
+                    <!-- Dynamic Finance Header Overview -->
+                    <div id="financeOverviewCard" class="bg-gradient-to-r from-emerald-800 to-emerald-600 text-white p-6 rounded-2xl shadow-xl flex justify-between items-center">
+                        <div>
+                            <p id="finCardTitle" class="text-xs uppercase font-semibold text-emerald-200 tracking-wider">Total Alokasi Keuangan</p>
+                            <h3 id="finCardAmount" class="text-3xl font-extrabold mt-1">Rp 0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md text-xl">
+                            <i class="fa-solid fa-vault"></i>
+                        </div>
+                    </div>
+
+                    <!-- Wishlist Items Section -->
+                    <div id="targetBarangSection" class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                <i class="fa-solid fa-bag-shopping text-emerald-600"></i> Target Barang Impian
+                            </h3>
+                            <button onclick="openTargetModal()" class="text-sm text-emerald-600 font-semibold hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-plus text-xs"></i> Tambah Target Barang
+                            </button>
+                        </div>
+                        <div id="wishlistGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                    </div>
+
+                    <!-- Professional Analytics Section -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-chart-column text-emerald-600"></i> Analytics & Breakdown Visual
+                            </h3>
+                            <span id="chartCategoryLabel" class="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full">Semua Kategori</span>
+                        </div>
+                        <div class="h-64 relative">
+                            <canvas id="financeCategoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- History Logs & Export Actions -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i> Riwayat Mutasi Keuangan
+                            </h3>
+                            <div class="flex gap-2">
+                                <button onclick="exportToCSV()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                    <i class="fa-solid fa-file-excel text-emerald-600"></i> Ekspor Excel/CSV
+                                </button>
+                                <button onclick="exportToPDF()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                    <i class="fa-solid fa-file-pdf text-rose-600"></i> Cetak / PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="text-xs uppercase text-slate-400 border-b border-slate-100">
+                                        <th class="py-3 px-2">Tanggal</th>
+                                        <th class="py-3 px-2">Jenis</th>
+                                        <th class="py-3 px-2">Kategori / Barang</th>
+                                        <th class="py-3 px-2">Nominal</th>
+                                        <th class="py-3 px-2">Keterangan / Alasan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="financeHistoryTable" class="divide-y divide-slate-100 text-slate-600"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
     </div>
 
     <!-- MODAL: Tambah/Edit Catatan/Tugas -->
