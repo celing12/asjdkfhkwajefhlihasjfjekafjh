@@ -1,5 +1,5 @@
 // --- INISIALISASI SUPABASE ---
-const SUPABASE_URL = 'https://utrhezymrxngbyzzfzmw.supabase.co';
+const SUPABASE_URL = 'https://utrhezymrxngbyzzfzmw.supabase.co/rest/v1/';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0cmhlenltcnhuZ2J5enpmem13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM3OTE1MDMsImV4cCI6MjEwOTM2NzUwM30.opXTCl6t0HIEwBrAvNPtSnh3NOr2kH9oQi7inQfrq18';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
