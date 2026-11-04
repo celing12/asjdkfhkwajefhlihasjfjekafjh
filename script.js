@@ -3,7 +3,7 @@ const SUPABASE_URL = 'https://utrhezymrxngbyzzfzmw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0cmhlenltcnhuZ2J5enpmem13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM3OTE1MDMsImV4cCI6MjEwOTM2NzUwM30.opXTCl6t0HIEwBrAvNPtSnh3NOr2kH9oQi7inQfrq18';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 1. Inisialisasi State di atas segalanya agar tidak error "Cannot access before initialization"
+// App State
 let state = {
     tasks: [],
     savings: 0,
@@ -35,24 +35,32 @@ function formatRp(num) {
     return 'Rp ' + Number(num).toLocaleString('id-ID');
 }
 
-// 2. Load Data dari Supabase
+// --- LOAD DATA DARI SUPABASE SAAT HALAMAN DIBUKA ---
 async function loadDataFromCloud() {
-    showSpinner("Menghubungkan ke Database Cloud...");
+    showSpinner("Memuat data dari Database...");
     try {
-        const { data: tasksData } = await _supabase.from('tasks').select('*');
+        // 1. Ambil Tasks
+        const { data: tasksData, error: taskErr } = await _supabase.from('tasks').select('*');
         if (tasksData) state.tasks = tasksData;
+        if (taskErr) console.error("Error load tasks:", taskErr);
 
-        const { data: summaryData } = await _supabase.from('finance_summary').select('savings').eq('id', 1).single();
+        // 2. Ambil Savings
+        const { data: summaryData, error: sumErr } = await _supabase.from('finance_summary').select('savings').eq('id', 1).single();
         if (summaryData) state.savings = summaryData.savings;
+        if (sumErr) console.error("Error load summary:", sumErr);
 
-        const { data: targetsData } = await _supabase.from('targets').select('*');
+        // 3. Ambil Targets
+        const { data: targetsData, error: tarErr } = await _supabase.from('targets').select('*');
         if (targetsData) state.targets = targetsData;
+        if (tarErr) console.error("Error load targets:", tarErr);
 
-        const { data: historyData } = await _supabase.from('history').select('*');
+        // 4. Ambil History
+        const { data: historyData, error: hisErr } = await _supabase.from('history').select('*');
         if (historyData) state.history = historyData;
+        if (hisErr) console.error("Error load history:", hisErr);
 
     } catch (err) {
-        console.error("Gagal memuat data dari Supabase:", err);
+        console.error("Gagal terhubung ke Supabase:", err);
     } finally {
         hideSpinner();
         loadProfileImage();
@@ -67,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDataFromCloud();
 });
 
-// --- Profile Image (Tetap di LocalStorage karena berupa file gambar) ---
+// --- Profile Image (Lokal browser) ---
 function handleProfileImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -115,7 +123,7 @@ function switchTab(tab) {
     }, 200);
 }
 
-// --- TASKS MODULE (SUPABASE SYNC) ---
+// --- TASKS MODULE ---
 function filterTasks(cat) {
     currentTaskFilter = cat;
     ['all', 'osis', 'kelas', 'ilmu'].forEach(c => {
@@ -205,7 +213,7 @@ function openTaskModal(taskId = null) {
             document.getElementById('taskId').value = task.id;
             document.getElementById('taskTitle').value = task.title;
             document.getElementById('taskCategory').value = task.category;
-            document.getElementById('taskDesc').value = task.description;
+            document.getElementById('taskDesc').value = task.description || '';
             document.getElementById('taskPriority').value = task.priority;
             document.getElementById('taskModalTitle').innerText = 'Edit Catatan';
             updateTaskFormLabel();
@@ -236,7 +244,8 @@ async function handleTaskSubmit(e) {
             task.description = description;
             task.priority = priority;
 
-            await _supabase.from('tasks').update({ title, category, description, priority }).eq('id', taskId);
+            const { error } = await _supabase.from('tasks').update({ title, category, description, priority }).eq('id', taskId);
+            if (error) alert("Gagal update task: " + error.message);
         }
     } else {
         const newTask = {
@@ -249,23 +258,27 @@ async function handleTaskSubmit(e) {
             date: new Date().toISOString().split('T')[0]
         };
         state.tasks.push(newTask);
-        await _supabase.from('tasks').insert([newTask]);
+        const { error } = await _supabase.from('tasks').insert([newTask]);
+        if (error) alert("Gagal simpan task: " + error.message);
     }
 
     renderTasks();
+    renderDashboard();
     closeTaskModal();
     document.getElementById('taskForm').reset();
     hideSpinner();
 }
 
 async function toggleTask(id) {
-    showSpinner("Updating status...");
+    showSpinner("Memperbarui status...");
     const t = state.tasks.find(x => x.id === id);
     if (t) {
         t.completed = !t.completed;
-        await _supabase.from('tasks').update({ completed: t.completed }).eq('id', id);
+        const { error } = await _supabase.from('tasks').update({ completed: t.completed }).eq('id', id);
+        if (error) alert("Gagal update status: " + error.message);
     }
     renderTasks();
+    renderDashboard();
     hideSpinner();
 }
 
@@ -273,12 +286,14 @@ async function deleteTask(id) {
     if (!confirm("Hapus catatan ini?")) return;
     showSpinner("Menghapus...");
     state.tasks = state.tasks.filter(x => x.id !== id);
-    await _supabase.from('tasks').delete().eq('id', id);
+    const { error } = await _supabase.from('tasks').delete().eq('id', id);
+    if (error) alert("Gagal menghapus: " + error.message);
     renderTasks();
+    renderDashboard();
     hideSpinner();
 }
 
-// --- FINANCE MODULE (SUPABASE SYNC) ---
+// --- FINANCE MODULE ---
 function filterFinance(cat) {
     currentFinanceFilter = cat;
     ['all', 'tabungan', 'target'].forEach(c => {
@@ -476,6 +491,7 @@ async function handleFinanceSubmit(e) {
     await _supabase.from('history').insert([newHistory]);
 
     renderFinance();
+    renderDashboard();
     closeFinanceModal();
     document.getElementById('financeForm').reset();
     hideSpinner();
@@ -560,6 +576,7 @@ async function recordWithdrawal(src, targetName, amount, reason) {
     await _supabase.from('history').insert([newHistory]);
 
     renderFinance();
+    renderDashboard();
     closeWithdrawModal();
     document.getElementById('withdrawForm').reset();
     hideSpinner();
@@ -579,9 +596,11 @@ async function handleTargetSubmit(e) {
         image: document.getElementById('targetImage').value || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500'
     };
     state.targets.push(newTarget);
-    await _supabase.from('targets').insert([newTarget]);
+    const { error } = await _supabase.from('targets').insert([newTarget]);
+    if (error) alert("Gagal menambah target: " + error.message);
 
     renderFinance();
+    renderDashboard();
     closeTargetModal();
     document.getElementById('targetForm').reset();
     hideSpinner();
@@ -598,6 +617,7 @@ async function deleteTarget(id) {
         await _supabase.from('targets').delete().eq('id', id);
     }
     renderFinance();
+    renderDashboard();
     hideSpinner();
 }
 
